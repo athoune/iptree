@@ -9,14 +9,21 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 )
 
-type Trunk struct {
+type Trunk interface {
+	Append(nm *net.IPNet, data interface{})
+	Get(ip net.IP) (interface{}, bool)
+	Size() int
+	Dump(w io.Writer)
+}
+
+type SimpleTrunk struct {
 	*Node
 	size             int
 	numberOfFullList int
 }
 
-func NewTrunk(numberOfFullList int) *Trunk {
-	return &Trunk{
+func NewTrunk(numberOfFullList int) *SimpleTrunk {
+	return &SimpleTrunk{
 		NewNode(0, true),
 		0,
 		numberOfFullList,
@@ -24,7 +31,7 @@ func NewTrunk(numberOfFullList int) *Trunk {
 }
 
 type CachedTrunk struct {
-	*Trunk
+	*SimpleTrunk
 	cache *lru.Cache
 }
 
@@ -39,7 +46,7 @@ func NewCachedTrunk(size int, numberOfFullList int) (*CachedTrunk, error) {
 	}, nil
 }
 
-func (t *Trunk) Append(nm *net.IPNet, data interface{}) {
+func (t *SimpleTrunk) Append(nm *net.IPNet, data interface{}) {
 	ones, _ := nm.Mask.Size()
 	node := t.Node
 	for i := 0; i < ones/8; i++ {
@@ -52,11 +59,11 @@ func (t *Trunk) Append(nm *net.IPNet, data interface{}) {
 	t.size++
 }
 
-func (t *Trunk) Size() int {
+func (t *SimpleTrunk) Size() int {
 	return t.size
 }
 
-func (t *Trunk) Get(ip net.IP) (interface{}, bool) {
+func (t *SimpleTrunk) Get(ip net.IP) (interface{}, bool) {
 	ip = ip.To4()
 	node := t.Node
 	var n *Node
@@ -82,7 +89,7 @@ func (c *CachedTrunk) Get(ip net.IP) (interface{}, bool) {
 		vv := v.(response)
 		return vv.value, vv.ok
 	}
-	value, ok := c.Trunk.Get(ip)
+	value, ok := c.SimpleTrunk.Get(ip)
 	c.cache.Add(key, response{ok, value})
 	return value, ok
 }
@@ -97,7 +104,7 @@ type response struct {
 	value interface{}
 }
 
-func (t *Trunk) Dump(w io.Writer) {
+func (t *SimpleTrunk) Dump(w io.Writer) {
 	dump(w, 0, t.Node)
 }
 
