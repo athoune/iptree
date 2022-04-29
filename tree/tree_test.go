@@ -9,15 +9,18 @@ import (
 )
 
 func TestTree2(t *testing.T) {
-	tree := NewTrunk(2)
-	_, nm, err := net.ParseCIDR("192.168.1.0/24")
+	cachedTree, err := NewCachedTrunk(1, 2)
 	assert.NoError(t, err)
-	tree.Append(nm, "Hello")
-	spew.Dump(tree)
-	_, ok := tree.Get(net.ParseIP("192.168.1.42"))
-	assert.True(t, ok)
-	_, ok = tree.Get(net.ParseIP("192.168.2.42"))
-	assert.False(t, ok)
+	for _, tree := range []Trunk{NewTrunk(2), cachedTree} {
+		_, nm, err := net.ParseCIDR("192.168.1.0/24")
+		assert.NoError(t, err)
+		tree.Append(nm, "Hello")
+		spew.Dump(tree)
+		_, ok := tree.Get(net.ParseIP("192.168.1.42"))
+		assert.True(t, ok)
+		_, ok = tree.Get(net.ParseIP("192.168.2.42"))
+		assert.False(t, ok)
+	}
 }
 
 func BenchmarkContains(b *testing.B) {
