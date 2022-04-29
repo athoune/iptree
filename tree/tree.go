@@ -9,19 +9,32 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 )
 
+/*
+Trunk is the start of a tree storage
+*/
 type Trunk interface {
+	// Append an IP network, and a payload
 	Append(nm *net.IPNet, data interface{})
+	// Get an IP, return a payload, and a boolean, true if the IP is in a registered network
 	Get(ip net.IP) (interface{}, bool)
+	// Size is the number of networks
 	Size() int
+	// Dump the tree, for debugging purpose
 	Dump(w io.Writer)
 }
 
+/*
+SimpleTrunk is a naïve Trunk, without any cache
+*/
 type SimpleTrunk struct {
 	*Node
 	size             int
 	numberOfFullList int
 }
 
+/*
+NewTrunk returns a new Trunk
+*/
 func NewTrunk(numberOfFullList int) *SimpleTrunk {
 	return &SimpleTrunk{
 		NewNode(0, true),
@@ -30,11 +43,17 @@ func NewTrunk(numberOfFullList int) *SimpleTrunk {
 	}
 }
 
+/*
+CachedTrunk is a Trunk with a LRU cache
+*/
 type CachedTrunk struct {
 	*SimpleTrunk
 	cache *lru.Cache
 }
 
+/*
+NewCachedTrunk returns a new CachedTrunk
+*/
 func NewCachedTrunk(size int, numberOfFullList int) (*CachedTrunk, error) {
 	cache, err := lru.New(size)
 	if err != nil {
@@ -94,6 +113,7 @@ func (c *CachedTrunk) Get(ip net.IP) (interface{}, bool) {
 	return value, ok
 }
 
+// Leaf is the end of a tree path
 type Leaf struct {
 	Netmask *net.IPNet
 	Data    interface{}
