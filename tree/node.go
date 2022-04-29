@@ -2,6 +2,7 @@ package tree
 
 import "sort"
 
+// Node describes a tree graph
 type Node struct {
 	Name     byte
 	Sons     Nodes
@@ -9,12 +10,19 @@ type Node struct {
 	fullList bool
 }
 
+// Nodes is a list of Node, Nodes is sortable
 type Nodes []*Node
 
-func (n Nodes) Len() int           { return len(n) }
-func (n Nodes) Swap(i, j int)      { n[i], n[j] = n[j], n[i] }
+// Len is the nimber of Node
+func (n Nodes) Len() int { return len(n) }
+
+// Swap two Nodes
+func (n Nodes) Swap(i, j int) { n[i], n[j] = n[j], n[i] }
+
+// Less
 func (n Nodes) Less(i, j int) bool { return n[i].Name < n[j].Name }
 
+// Son of a Node of this key
 func (n *Node) Son(a byte) *Node {
 	if n.fullList {
 		return n.Sons[a]
@@ -31,6 +39,7 @@ func (n *Node) Son(a byte) *Node {
 	return nil
 }
 
+// SonOrNew return the next Node in the graph
 func (n *Node) SonOrNew(a byte, full bool) *Node {
 	node := n.Son(a)
 	if node != nil {
@@ -46,6 +55,7 @@ func (n *Node) SonOrNew(a byte, full bool) *Node {
 	return node
 }
 
+// NewNode return a new Node
 func NewNode(name byte, full bool) *Node {
 	var size int
 	if full {
